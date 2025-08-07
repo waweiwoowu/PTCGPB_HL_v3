@@ -49,6 +49,8 @@ PTCGPB_HL_v3/
 │   ├── switch-account.js  # Account switching helper
 │   └── list-accounts.js   # Account listing utility
 ├── batch/                 # Windows batch files
+│   ├── run-current-account.bat # Batch file for current account(s)
+│   ├── run-selected-accounts.bat # Batch file for specific accounts
 │   ├── run-account1.bat   # Batch file for Account 1
 │   ├── run-account2.bat   # Batch file for Account 2
 │   └── run-all-accounts.bat # Batch file for all accounts
@@ -113,7 +115,7 @@ PTCGPB_HL_v3/
 ```
 
 **Configuration Fields:**
-- `activeAccountIndex`: Index of the account to run (0-based)
+- `activeAccountIndex`: Index of the account to run (0-based). Can be a single number or an array of numbers (e.g., `[0, 2]` to run accounts 0 and 2 simultaneously)
 - `deviceAccounts`: Array of game accounts with optional `name` field for easier identification
 - `testAccount`: Account for testing purposes
 - `webhook`: Discord webhook URL for notifications
@@ -171,7 +173,11 @@ node scripts/switch-account.js list
 node scripts/switch-account.js 0  # Switch to first account
 node scripts/switch-account.js 1  # Switch to second account
 
-# Run the bot with the selected account
+# Switch to multiple accounts
+node scripts/switch-account.js 0 2  # Switch to accounts 0 and 2
+node scripts/switch-account.js 1 3 5  # Switch to accounts 1, 3, and 5
+
+# Run the bot with the selected account(s)
 node approve.js
 ```
 
@@ -179,10 +185,17 @@ node approve.js
 For Windows users, you can use the provided batch files for quick account switching:
 
 ```bash
-# Run Account 1
+# Run current selected account(s) (based on activeAccountIndex)
+.\batch\run-current-account.bat
+
+# Run specific accounts via command line
+.\batch\run-selected-accounts.bat 0 2    # Run accounts 0 and 2
+.\batch\run-selected-accounts.bat 1 3 5  # Run accounts 1, 3, and 5
+
+# Run Account 1 (automatically switch to account 1)
 .\batch\run-account1.bat
 
-# Run Account 2
+# Run Account 2 (automatically switch to account 2)
 .\batch\run-account2.bat
 
 # Run ALL accounts simultaneously
@@ -190,11 +203,16 @@ For Windows users, you can use the provided batch files for quick account switch
 ```
 
 The batch files will automatically:
-1. Switch to the specified account (or load all accounts)
-2. Start the bot
-3. Keep the window open for monitoring
+1. Check if Node.js is installed
+2. Check if configuration file exists
+3. Switch to the specified account (or load all accounts)
+4. Start the bot
+5. Keep the window open for monitoring
 
-**Note**: The `run-all-accounts.bat` runs all accounts simultaneously, which may be resource-intensive.
+**Note**: 
+- `run-current-account.bat` uses the `activeAccountIndex` from `config/main.json` without switching accounts
+- `run-selected-accounts.bat` allows you to specify which accounts to run via command line arguments
+- The `run-all-accounts.bat` runs all accounts simultaneously, which may be resource-intensive
 
 ## 🔧 Key Components
 

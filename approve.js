@@ -126,29 +126,64 @@ if (isMultiAccountMode) {
     console.log(`  ${index}: ${acc.name || `Account ${index + 1}`} (ID: ${acc.id.substring(0, 8)}...)`);
   });
 } else {
-  // Single account mode
+  // Single account mode or specific accounts mode
   const activeAccountIndex = mainConfig.activeAccountIndex || 0;
-  const activeAccount = mainConfig.deviceAccounts[activeAccountIndex];
+  
+  // Check if activeAccountIndex is an array (multiple accounts) or single number
+  if (Array.isArray(activeAccountIndex)) {
+    console.log(`🎮 Running bot for selected accounts: [${activeAccountIndex.join(', ')}]`);
+    
+    // Validate all indexes exist
+    const invalidIndexes = activeAccountIndex.filter(index => 
+      index < 0 || index >= mainConfig.deviceAccounts.length
+    );
+    
+    if (invalidIndexes.length > 0) {
+      console.error(`❌ Invalid account indexes: ${invalidIndexes.join(', ')}! Available accounts: 0-${mainConfig.deviceAccounts.length - 1}`);
+      process.exit(1);
+    }
+    
+    // Create accounts array from selected indexes
+    accounts = activeAccountIndex.map(index => {
+      const account = mainConfig.deviceAccounts[index];
+      return {
+        ...account,
+        headers: {},
+        nickname: "",
+        nextLoginAt: 0,
+        isLogin: false,
+      };
+    });
+    
+    console.log(`📋 Loaded ${accounts.length} selected accounts:`);
+    accounts.forEach((acc, index) => {
+      const originalIndex = activeAccountIndex[index];
+      console.log(`  ${originalIndex}: ${acc.name || `Account ${originalIndex + 1}`} (ID: ${acc.id.substring(0, 8)}...)`);
+    });
+  } else {
+    // Single account mode (backward compatibility)
+    const activeAccount = mainConfig.deviceAccounts[activeAccountIndex];
 
-  if (!activeAccount) {
-    console.error(`❌ Account index ${activeAccountIndex} not found! Available accounts: 0-${mainConfig.deviceAccounts.length - 1}`);
-    process.exit(1);
+    if (!activeAccount) {
+      console.error(`❌ Account index ${activeAccountIndex} not found! Available accounts: 0-${mainConfig.deviceAccounts.length - 1}`);
+      process.exit(1);
+    }
+
+    console.log(`🎮 Running bot for: ${activeAccount.name || `Account ${activeAccountIndex + 1}`} (ID: ${activeAccount.id.substring(0, 8)}...)`);
+
+    accounts = [{
+      ...activeAccount,
+      headers: {},
+      nickname: "",
+      nextLoginAt: 0,
+      isLogin: false,
+    }];
   }
-
-  console.log(`🎮 Running bot for: ${activeAccount.name || `Account ${activeAccountIndex + 1}`} (ID: ${activeAccount.id.substring(0, 8)}...)`);
-
-  accounts = [{
-    ...activeAccount,
-    headers: {},
-    nickname: "",
-    nextLoginAt: 0,
-    isLogin: false,
-  }];
 }
 
 // Main menu function that works for both modes
 async function mainMenu() {
-  if (isMultiAccountMode) {
+  if (isMultiAccountMode || accounts.length > 1) {
     // Multi-account login management
     (async () => {
       while (1) {

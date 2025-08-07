@@ -5,10 +5,10 @@ const configPath = path.join(__dirname, '..', 'config', 'main.json');
 
 function loadConfig() {
   try {
-    const configData = fs.readFileSync(configPath, 'utf8');
-    return JSON.parse(configData);
+    const data = fs.readFileSync(configPath, 'utf8');
+    return JSON.parse(data);
   } catch (error) {
-    console.error('❌ Error loading config:', error.message);
+    console.error('Error reading config file:', error.message);
     process.exit(1);
   }
 }
@@ -16,79 +16,84 @@ function loadConfig() {
 function saveConfig(config) {
   try {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-    console.log('✅ Configuration saved successfully!');
   } catch (error) {
-    console.error('❌ Error saving config:', error.message);
+    console.error('Error writing config file:', error.message);
     process.exit(1);
   }
 }
 
 function listAccounts(config) {
-  console.log('\n📋 Available accounts:');
-  config.deviceAccounts.forEach((account, index) => {
-    const isActive = index === config.activeAccountIndex;
-    const status = isActive ? '🟢 ACTIVE' : '⚪';
-    console.log(`  ${index}: ${account.name || `Account ${index + 1}`} ${status}`);
+  console.log('Available accounts:');
+  config.deviceAccounts.forEach((acc, index) => {
+    console.log(`  ${index}: ${acc.name || `Account ${index + 1}`} (${acc.id.substring(0, 8)}...)`);
   });
-  console.log('');
 }
 
-function switchAccount(newIndex) {
+function switchAccount(newIndexes) {
   const config = loadConfig();
   
-  if (newIndex < 0 || newIndex >= config.deviceAccounts.length) {
-    console.error(`❌ Invalid account index: ${newIndex}`);
-    console.log(`Available accounts: 0-${config.deviceAccounts.length - 1}`);
+  // Convert to array if single number
+  const indexes = Array.isArray(newIndexes) ? newIndexes : [newIndexes];
+  
+  // Validate indexes
+  const invalidIndexes = indexes.filter(index => 
+    index < 0 || index >= config.deviceAccounts.length
+  );
+  
+  if (invalidIndexes.length > 0) {
+    console.error(`❌ Invalid account indexes: ${invalidIndexes.join(', ')}`);
+    listAccounts(config);
     process.exit(1);
   }
-
-  const oldIndex = config.activeAccountIndex;
-  const oldAccount = config.deviceAccounts[oldIndex];
-  const newAccount = config.deviceAccounts[newIndex];
-
-  config.activeAccountIndex = newIndex;
+  
+  // Set activeAccountIndex (can be single number or array)
+  config.activeAccountIndex = indexes.length === 1 ? indexes[0] : indexes;
+  
   saveConfig(config);
-
-  console.log(`🔄 Switched from "${oldAccount.name || `Account ${oldIndex + 1}`}" to "${newAccount.name || `Account ${newIndex + 1}`}"`);
-  console.log(`🎮 Now running: ${newAccount.name || `Account ${newIndex + 1}`} (ID: ${newAccount.id.substring(0, 8)}...)`);
+  
+  if (indexes.length === 1) {
+    console.log(`✅ Switched to account ${indexes[0]}: ${config.deviceAccounts[indexes[0]].name || `Account ${indexes[0] + 1}`}`);
+  } else {
+    console.log(`✅ Switched to accounts: [${indexes.join(', ')}]`);
+    indexes.forEach(index => {
+      console.log(`  ${index}: ${config.deviceAccounts[index].name || `Account ${index + 1}`}`);
+    });
+  }
 }
 
 function showUsage() {
-  console.log(`
-🎮 Pokemon TCG Bot Account Switcher
-
-Usage:
-  node switch-account.js <account_index>
-  node switch-account.js list
-
-Examples:
-  node switch-account.js 0     # Switch to first account
-  node switch-account.js 1     # Switch to second account
-  node switch-account.js list  # Show all accounts
-
-After switching, run: node approve.js
-`);
+  console.log('Usage:');
+  console.log('  node switch-account.js list                    - List all accounts');
+  console.log('  node switch-account.js <index>                 - Switch to single account (0-based)');
+  console.log('  node switch-account.js <index1> <index2> ...   - Switch to multiple accounts');
+  console.log('');
+  console.log('Examples:');
+  console.log('  node switch-account.js 0                       - Switch to account 0');
+  console.log('  node switch-account.js 0 2                     - Switch to accounts 0 and 2');
+  console.log('  node switch-account.js 1 3 5                   - Switch to accounts 1, 3, and 5');
 }
 
-// Main execution
+// Main execution logic
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
   showUsage();
-  process.exit(0);
+  process.exit(1);
 }
 
-const command = args[0];
-
-if (command === 'list') {
+if (args[0] === 'list') {
   const config = loadConfig();
   listAccounts(config);
 } else {
-  const accountIndex = parseInt(command);
-  if (isNaN(accountIndex)) {
-    console.error('❌ Invalid account index. Must be a number.');
-    showUsage();
-    process.exit(1);
-  }
-  switchAccount(accountIndex);
+  // Parse indexes (support both single and multiple)
+  const indexes = args.map(arg => {
+    const index = parseInt(arg);
+    if (isNaN(index)) {
+      console.error(`❌ Invalid index: ${arg}`);
+      process.exit(1);
+    }
+    return index;
+  });
+  
+  switchAccount(indexes);
 }

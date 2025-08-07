@@ -49,6 +49,8 @@ PTCGPB_HL_v3/
 │   ├── switch-account.js  # 帳號切換輔助工具
 │   └── list-accounts.js   # 帳號列表工具
 ├── batch/                 # Windows 批次檔案
+│   ├── run-current-account.bat # 批次檔案 (當前帳號)
+│   ├── run-selected-accounts.bat # 批次檔案 (特定帳號)
 │   ├── run-account1.bat   # 批次檔案 (帳號 1)
 │   ├── run-account2.bat   # 批次檔案 (帳號 2)
 │   └── run-all-accounts.bat # 批次檔案 (所有帳號)
@@ -113,7 +115,7 @@ PTCGPB_HL_v3/
 ```
 
 **配置欄位：**
-- `activeAccountIndex`: 要運行的帳號索引（從0開始）
+- `activeAccountIndex`: 要運行的帳號索引（從0開始）。可以是單個數字或數字陣列（例如：`[0, 2]` 同時運行帳號 0 和 2）
 - `deviceAccounts`: 遊戲帳號陣列，可選的 `name` 欄位用於更容易識別
 - `testAccount`: 用於測試的帳號
 - `webhook`: Discord webhook URL 用於通知
@@ -171,6 +173,10 @@ node scripts/switch-account.js list
 node scripts/switch-account.js 0  # 切換到第一個帳號
 node scripts/switch-account.js 1  # 切換到第二個帳號
 
+# 切換到多個帳號
+node scripts/switch-account.js 0 2  # 切換到帳號 0 和 2
+node scripts/switch-account.js 1 3 5  # 切換到帳號 1、3 和 5
+
 # 使用選定的帳號運行機器人
 node approve.js
 ```
@@ -179,10 +185,17 @@ node approve.js
 Windows 用戶可以使用提供的批次檔案進行快速帳號切換：
 
 ```bash
-# 運行帳號 1
+# 運行當前選定的帳號（基於 activeAccountIndex）
+.\batch\run-current-account.bat
+
+# 通過命令列運行特定帳號
+.\batch\run-selected-accounts.bat 0 2    # 運行帳號 0 和 2
+.\batch\run-selected-accounts.bat 1 3 5  # 運行帳號 1、3 和 5
+
+# 運行帳號 1（自動切換到帳號 1）
 .\batch\run-account1.bat
 
-# 運行帳號 2
+# 運行帳號 2（自動切換到帳號 2）
 .\batch\run-account2.bat
 
 # 同時運行所有帳號
@@ -190,11 +203,16 @@ Windows 用戶可以使用提供的批次檔案進行快速帳號切換：
 ```
 
 批次檔案會自動：
-1. 切換到指定的帳號（或載入所有帳號）
-2. 啟動機器人
-3. 保持視窗開啟以便監控
+1. 檢查 Node.js 是否已安裝
+2. 檢查配置檔案是否存在
+3. 切換到指定的帳號（或載入所有帳號）
+4. 啟動機器人
+5. 保持視窗開啟以便監控
 
-**注意**: `run-all-accounts.bat` 會同時運行所有帳號，可能會消耗較多資源。
+**注意**: 
+- `run-current-account.bat` 使用 `config/main.json` 中的 `activeAccountIndex`，不會自動切換帳號
+- `run-selected-accounts.bat` 允許您通過命令列參數指定要運行的帳號
+- `run-all-accounts.bat` 會同時運行所有帳號，可能會消耗較多資源
 
 ## 🔧 關鍵組件
 

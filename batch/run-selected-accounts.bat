@@ -1,5 +1,5 @@
 @echo off
-echo 🎮 Starting Pokemon TCG Bot for Account 1...
+echo 🎮 Starting Pokemon TCG Bot for current account...
 echo.
 
 REM Check if Node.js is installed
@@ -19,9 +19,15 @@ if not exist "..\config\main.json" (
     exit /b 1
 )
 
-echo 🎮 Switching to Account 1...
-node ..\scripts\switch-account.js 0
+echo 📋 Loading current account configuration...
+node ..\scripts\list-accounts.js
+
 echo.
-echo 🚀 Starting bot for Account 1...
+echo 🚀 Starting bot for current account (activeAccountIndex)...
+echo 💡 Tip: Edit config\main.json to change activeAccountIndex
+echo.
+
+REM Start the bot using current activeAccountIndex
 node ..\approve.js
+
 pause
